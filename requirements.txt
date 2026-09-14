@@ -1,0 +1,6 @@
+cognee
+python-dotenv
+scalekit-sdk-python[fastapi]
+fastapi
+uvicorn
+

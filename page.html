@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Issue desk</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&family=Instrument+Serif&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/tokens.css" />
+
+  <style>
+    html, body { width: 100%; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100dvh;
+      background: var(--color-paper);
+      color: var(--color-ink);
+      font: var(--text-base)/1.5 var(--font-body);
+      padding: 1.25rem clamp(1rem, 4vw, 1.5rem) 2rem;
+    }
+    h1, h2 {
+      font-family: var(--font-display);
+      font-style: normal;
+      font-weight: 400;
+      letter-spacing: -0.02em;
+    }
+    a { color: var(--color-ink); }
+    .site-bar {
+      width: min(78rem, 100%);
+      margin: 0 auto var(--space-xl);
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: var(--space-md);
+    }
+    .wordmark {
+      font-family: var(--font-wordmark);
+      font-size: var(--text-md);
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .nav-cta {
+      color: var(--color-muted);
+      text-decoration: none;
+      font-size: var(--text-sm);
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+    }
+    .nav-cta:hover { color: var(--color-ink); }
+    .nav-cta:focus-visible { outline: 3px solid var(--color-focus); outline-offset: 2px; }
+    main {
+      width: min(78rem, 100%);
+      margin: 0 auto;
+      display: grid;
+      gap: var(--space-lg);
+      min-width: 0;
+      max-width: 100%;
+    }
+    .intro, .intro p, .brief, .brief p, .brief li, .gate, .gate p {
+      max-width: 100%;
+    }
+    .desk {
+      display: grid;
+      gap: var(--space-lg);
+      min-width: 0;
+    }
+    .intro h1 {
+      font-size: var(--text-display);
+      line-height: 1.05;
+      margin: 0 0 var(--space-sm);
+    }
+    .intro p {
+      margin: 0;
+      max-width: 52ch;
+      color: var(--color-ink-2);
+    }
+    .who { margin-top: var(--space-sm); color: var(--color-muted); font-size: var(--text-sm); }
+    .who code { font-family: var(--font-mono); font-size: 0.85em; }
+    .counter {
+      border: var(--rule-hair) solid var(--color-ink);
+      background: var(--color-paper);
+      min-width: 0;
+    }
+    .counter-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: var(--space-sm);
+      padding: var(--space-sm) var(--space-md);
+      border-bottom: var(--rule-hair) solid var(--color-rule);
+    }
+    .counter-top p { margin: 0; font-size: var(--text-sm); color: var(--color-muted); }
+    .stage {
+      display: grid;
+      gap: var(--space-lg);
+      min-width: 0;
+    }
+    .gate, .bind {
+      border: var(--rule-hair) solid var(--color-ink);
+      padding: var(--space-lg);
+      display: grid;
+      gap: var(--space-md);
+      min-width: 0;
+    }
+    .brief {
+      min-width: 0;
+      display: grid;
+      gap: var(--space-sm);
+    }
+    .brief h2 {
+      font-size: var(--text-lg);
+      margin: 0 0 var(--space-xs);
+    }
+    .steps {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 0;
+    }
+    .steps li {
+      display: grid;
+      grid-template-columns: 1.75rem minmax(0, 1fr);
+      gap: var(--space-sm);
+      padding: 0 0 var(--space-sm);
+    }
+    .steps li:last-child { padding-bottom: 0; }
+    .steps .n {
+      font-variant-numeric: tabular-nums;
+      color: var(--color-muted);
+      font-size: var(--text-sm);
+      line-height: 1.4;
+    }
+    .steps h3 {
+      font-family: var(--font-body);
+      font-size: var(--text-sm);
+      font-weight: 700;
+      margin: 0 0 0.15rem;
+    }
+    .steps p {
+      margin: 0;
+      color: var(--color-ink-2);
+      font-size: var(--text-sm);
+    }
+    .gate code, .who code {
+      font-family: var(--font-body);
+      overflow-wrap: break-word;
+    }
+    .gate .ghost {
+      width: max-content;
+      justify-self: start;
+    }
+    .gate[hidden], .bind[hidden], .desk[hidden], .seq[hidden], .stage[hidden], .brief[hidden],
+    button[hidden], a[hidden] { display: none; }
+    .prompts {
+      display: grid;
+      gap: var(--space-xs);
+      width: 100%;
+    }
+    .prompts button {
+      width: 100%;
+      justify-content: flex-start;
+      white-space: normal;
+      text-align: left;
+      height: auto;
+      min-height: 44px;
+      padding: var(--space-sm) var(--space-md);
+    }
+    .log {
+      display: grid;
+      align-content: start;
+      gap: var(--space-sm);
+      padding: var(--space-md);
+      min-height: 12rem;
+    }
+    .bubble {
+      max-width: min(46ch, 100%);
+      padding: var(--space-sm) var(--space-md);
+    }
+    .bubble.you {
+      justify-self: end;
+      background: var(--color-you);
+      color: var(--color-paper);
+    }
+    .bubble.shop {
+      justify-self: start;
+      background: var(--color-paper-2);
+      color: var(--color-ink);
+    }
+    .bubble.shop.is-empty { color: var(--color-muted); }
+    .bubble.shop.is-error { color: var(--color-error); }
+    .ask-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-xs);
+      padding: var(--space-sm) var(--space-md);
+      border-top: var(--rule-hair) solid var(--color-rule);
+    }
+    button.ask, button.ghost, a.ask {
+      font: inherit;
+      font-size: var(--text-sm);
+      min-height: 44px;
+      padding: 0 1.15rem;
+      cursor: pointer;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    button.ask, a.ask {
+      width: max-content;
+      justify-self: start;
+      background: var(--color-ink);
+      color: var(--color-paper);
+      border: var(--rule-hair) solid var(--color-ink);
+      text-decoration: none;
+    }
+    button.ghost {
+      background: transparent;
+      color: var(--color-ink);
+      border: var(--rule-hair) solid var(--color-rule);
+    }
+    button.ask:hover, button.ghost:hover { filter: brightness(0.96); }
+    button.ask:focus-visible, button.ghost:focus-visible {
+      outline: 3px solid var(--color-focus);
+      outline-offset: 2px;
+    }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    details.how {
+      border-top: var(--rule-hair) solid var(--color-rule);
+      padding: 0;
+    }
+    details.how summary {
+      cursor: pointer;
+      padding: var(--space-md);
+      font-weight: 600;
+      list-style: none;
+    }
+    details.how summary::-webkit-details-marker { display: none; }
+    details.how .panel {
+      padding: 0 var(--space-md) var(--space-md);
+      display: grid;
+      gap: var(--space-md);
+    }
+    .split {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-xs);
+    }
+    .split article {
+      border: var(--rule-hair) solid var(--color-rule);
+      padding: var(--space-sm);
+      min-width: 0;
+    }
+    .split h2, .panel h2 {
+      font-size: var(--text-md);
+      margin: 0 0 var(--space-2xs);
+    }
+    .split p, .panel p { margin: 0; }
+    .seq {
+      border: var(--rule-hair) solid var(--color-ink);
+      min-width: 0;
+      padding: var(--space-md);
+      display: grid;
+      gap: var(--space-md);
+    }
+    .seq h2 {
+      font-size: var(--text-lg);
+      margin: 0;
+    }
+    .seq ol {
+      margin: 0;
+      padding-left: 1.25rem;
+      display: grid;
+      gap: var(--space-xs);
+      max-width: 62ch;
+    }
+    .seq-cta { justify-self: start; }
+    .overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: none;
+      place-items: center;
+      padding: var(--space-md);
+      background: var(--color-ink);
+    }
+    .overlay.is-open { display: grid; }
+    .overlay-panel {
+      width: min(68rem, calc(100vw - 2rem));
+      height: min(44rem, calc(100vh - 2rem));
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      background: var(--color-paper);
+      border: var(--rule-hair) solid var(--color-paper);
+      overflow: hidden;
+    }
+    .overlay-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--space-md);
+      padding: var(--space-sm) var(--space-md);
+      border-bottom: var(--rule-hair) solid var(--color-rule);
+    }
+    .overlay-bar p { margin: 0; font-size: var(--text-sm); }
+    .overlay iframe {
+      display: block;
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+      border: 0;
+      background: var(--color-paper);
+    }
+    pre.raw {
+      margin: 0;
+      white-space: pre-wrap;
+      font-family: var(--font-mono);
+      font-size: var(--text-xs);
+      overflow-wrap: anywhere;
+    }
+    .foot {
+      color: var(--color-muted);
+      font-size: var(--text-sm);
+    }
+    @media (min-width: 64rem) {
+      body { padding-inline: clamp(1.5rem, 4vw, 3rem); }
+      .stage, .desk {
+        grid-template-columns: minmax(18rem, 1.05fr) minmax(18rem, 0.95fr);
+        align-items: start;
+      }
+      .desk { align-items: stretch; }
+      .counter, details.how {
+        display: flex;
+        flex-direction: column;
+        min-height: 32rem;
+      }
+      details.how {
+        border: var(--rule-hair) solid var(--color-ink);
+      }
+      details.how .panel { flex: 1; }
+      .log { min-height: 20rem; }
+    }
+    @media (max-width: 40rem) {
+      .site-bar { margin-bottom: var(--space-lg); }
+      .intro h1 { font-size: 1.75rem; }
+      .split { grid-template-columns: minmax(0, 1fr); }
+      .ask-bar { flex-direction: column; }
+      .ask-bar button { width: 100%; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      * { transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-bar">
+    <a class="wordmark" href="/">Issue desk</a>
+    __NAV__
+  </header>
+  <main>
+    <header class="intro">
+      <h1 id="page-title">Sign in to the desk.</h1>
+      <p id="page-lede">This is the app you are building. Sign in as one customer, then send a fixed question.</p>
+      <p class="who">__WHO__</p>
+    </header>
+
+    <div class="stage" id="stage">
+    <div>
+    <section class="gate" id="gate">
+      <p>Sign in with <code>alice+sktest@demo.com</code> or <code>bob+sktest@demo.com</code>. OTP is <code>424242</code>.</p>
+      <a class="btn ask" href="/login">Sign in as Alice</a>
+      <button type="button" class="ghost" id="try-bob-gate">Try Bob without login</button>
+      <button type="button" class="ghost" id="open-seq-gate">How it works</button>
+    </section>
+
+    <section class="bind" id="bind" hidden>
+      <p>Scalekit signed you in. Continue as Alice, or try Bob without login.</p>
+      <div class="ask-bar">
+        <button type="button" class="ask" id="bind-alice">Continue as Alice</button>
+        <button type="button" class="ghost" id="try-bob-bind">Try Bob without login</button>
+      </div>
+    </section>
+    </div>
+    <aside class="brief" id="brief" aria-label="Demo briefing">
+      <h2>Welcome to the demo</h2>
+      <ol class="steps">
+        <li>
+          <span class="n">1</span>
+          <div>
+            <h3>This is Issue desk</h3>
+            <p>You are building this app. Two customers can sign in and use it.</p>
+          </div>
+        </li>
+        <li>
+          <span class="n">2</span>
+          <div>
+            <h3>Meet the customers</h3>
+            <p>Alice is Pro. She is on Avengers: Doomsday #51, not #53.</p>
+            <p>Bob is not Pro. His last book payment failed.</p>
+          </div>
+        </li>
+        <li>
+          <span class="n">3</span>
+          <div>
+            <h3>Use the desk</h3>
+            <p>Sign in as one customer. Send a fixed question from the list. Wait. The agent recalls from that customer’s memory. You do not type the answer.</p>
+          </div>
+        </li>
+        <li>
+          <span class="n">4</span>
+          <div>
+            <h3>What each product does</h3>
+            <p>Scalekit names who signed in. Later it can act in Slack as that person.</p>
+            <p>Cognee is memory for that customer only. Alice does not see Bob’s payment.</p>
+          </div>
+        </li>
+      </ol>
+    </aside>
+    </div>
+
+    <div class="desk" id="desk" hidden>
+    <section class="counter" aria-label="Shop chat">
+      <div class="counter-top">
+        <p>Customer at the counter</p>
+        <p id="plan-tag"></p>
+      </div>
+      <div class="log" id="log" aria-live="polite"></div>
+      <div class="ask-bar">
+        <div class="prompts" id="prompts"></div>
+        <button type="button" class="ghost" id="seed">Save this customer’s notes</button>
+        <button type="button" class="ghost" id="slack">Post to Slack</button>
+        <button type="button" class="ghost" id="try-bob-shop">Try Bob without login</button>
+        <button type="button" class="ghost" id="back-alice" hidden>Back to Alice</button>
+      </div>
+    </section>
+      <details class="how" id="how">
+        <summary>How this reply is built</summary>
+        <div class="panel">
+          <p id="how-lead">Scalekit named this customer. Storage is their saved note. Memory is Cognee recall for that dataset only.</p>
+          <div class="split">
+            <article>
+              <h2>Storage</h2>
+              <p>The agent picks facts from this customer’s file. It is not a recall.</p>
+              <p id="storage-note"></p>
+            </article>
+            <article>
+              <h2>Memory</h2>
+              <p>Cognee answers the same request from this customer’s dataset only.</p>
+              <p id="memory-note">No recall yet for this customer.</p>
+            </article>
+          </div>
+          <p id="how-next">Log out, then sign in as the other test user to see the other memory.</p>
+          <pre class="raw" id="raw" hidden></pre>
+        </div>
+      </details>
+    </div>
+    <section class="seq" id="seq" aria-label="Sequence steps">
+      <h2>Sequence</h2>
+      <ol>
+        <li>Alice opens the desk.</li>
+        <li>The desk sends her to Scalekit to sign in.</li>
+        <li>Scalekit returns a JWT. The desk reads it and knows she is Alice.</li>
+        <li>Alice asks a fixed question.</li>
+        <li>Cognee recalls only Alice’s dataset.</li>
+        <li>If the answer is enough, the desk replies.</li>
+        <li>If she needs Slack, Scalekit calls Slack as Alice. The token stays in Scalekit.</li>
+      </ol>
+      <button type="button" class="ghost seq-cta" id="open-seq">Open full sequence</button>
+    </section>
+    <p class="foot">Local demo. Storage is the note. Cognee is memory. Scalekit is sign-in.</p>
+  </main>
+  <div class="overlay" id="seq-overlay" hidden>
+    <div class="overlay-panel">
+      <div class="overlay-bar">
+        <p>Open desk. Sign in at Scalekit. JWT names Alice.</p>
+        <button type="button" class="ghost" id="close-seq">Close</button>
+      </div>
+      <iframe id="seq-frame" title="Name Alice, recall, then maybe act"></iframe>
+    </div>
+  </div>
+  <script>
+    const BOOT = __BOOT__;
+    const state = { customer: BOOT.customer, role: BOOT.role, guest: !!BOOT.guest, lines: [] };
+
+    function showView() {
+      const loggedIn = !!BOOT.logged_in;
+      const guest = !!state.guest;
+      const ready = !!state.customer && !!state.role && (loggedIn || guest);
+      document.getElementById("gate").hidden = loggedIn || guest;
+      document.getElementById("bind").hidden = !loggedIn || ready || guest;
+      document.getElementById("stage").hidden = ready;
+      document.getElementById("desk").hidden = !ready;
+      document.getElementById("seq").hidden = !ready;
+      document.getElementById("page-title").textContent = ready
+        ? "Ask the desk."
+        : loggedIn
+          ? "Name this turn."
+          : "Sign in to the desk.";
+      document.getElementById("page-lede").textContent = ready
+        ? (guest
+          ? "You are Bob as a guest. Send a fixed question. The reply is live Cognee memory."
+          : "Send a fixed question. The reply is live Cognee memory.")
+        : loggedIn
+          ? "This login did not map to Alice or Bob. Choose one for this visit."
+          : "This is the app you are building. Sign in as one customer, then send a fixed question.";
+      if (ready) renderShop();
+    }
+
+    function renderShop() {
+      const role = state.role;
+      document.getElementById("plan-tag").textContent =
+        role.name === "alice" ? "Alice, Pro" : (state.guest ? "Bob, guest" : "Bob, not Pro");
+      document.getElementById("try-bob-shop").hidden = role.name === "bob";
+      document.getElementById("back-alice").hidden = !state.guest;
+      document.getElementById("slack").hidden = state.guest;
+      document.getElementById("how-lead").textContent = state.guest
+        ? "You are viewing Bob as a guest. Scalekit did not name this customer. Storage is their saved note. Memory is Cognee recall for that dataset only."
+        : "Scalekit named this customer. Storage is their saved note. Memory is Cognee recall for that dataset only.";
+      document.getElementById("how-next").textContent = state.guest
+        ? "Sign in as Alice to see Scalekit login and Slack hands."
+        : "Log out, then sign in as the other test user to see the other memory.";
+      document.getElementById("storage-note").textContent = role.summary;
+      const prompts = document.getElementById("prompts");
+      prompts.innerHTML = role.questions.map((q) =>
+        `<button type="button" class="ghost" data-qid="${q.id}">${q.text}</button>`
+      ).join("");
+      prompts.querySelectorAll("button").forEach((btn) => {
+        btn.onclick = () => ask(btn.getAttribute("data-qid"), btn.textContent);
+      });
+      renderLog();
+    }
+
+    function renderLog() {
+      const log = document.getElementById("log");
+      const start = `<div class="bubble shop is-empty">What can I find for you?</div>`;
+      log.innerHTML = start + state.lines.map((line) =>
+        `<div class="bubble ${line.who}${line.kind ? " is-" + line.kind : ""}">${line.text}</div>`
+      ).join("");
+    }
+
+    function showRaw(data) {
+      const pre = document.getElementById("raw");
+      if (!data) { pre.hidden = true; return; }
+      pre.hidden = false;
+      pre.textContent = typeof data === "string" ? data : JSON.stringify(data, null, 2);
+    }
+
+    async function readJson(res) {
+      const data = await res.json();
+      if (!res.ok && !data.error) data.error = "request failed";
+      return data;
+    }
+
+    async function ask(qid, text) {
+      state.lines.push({ who: "you", text });
+      state.lines.push({ who: "shop", text: "Checking memory…", kind: "empty" });
+      renderLog();
+      document.querySelectorAll("#prompts button").forEach((btn) => { btn.disabled = true; });
+      const data = await readJson(await fetch("/api/ask", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ question_id: qid }),
+      }));
+      state.lines.pop();
+      if (data.ok && data.answer) {
+        state.lines.push({ who: "shop", text: data.answer });
+        document.getElementById("memory-note").textContent = data.answer;
+      } else {
+        state.lines.push({
+          who: "shop",
+          text: data.error || "Memory did not answer. Save this customer’s notes, wait, then ask again.",
+          kind: "error",
+        });
+      }
+      showRaw(data);
+      renderLog();
+      document.querySelectorAll("#prompts button").forEach((btn) => { btn.disabled = false; });
+    }
+
+    async function postSlack() {
+      const btn = document.getElementById("slack");
+      const channel = BOOT.channel || "general";
+      btn.disabled = true;
+      btn.textContent = "Posting…";
+      const data = await readJson(await fetch("/api/slack", { method: "POST" }));
+      if (data.link) {
+        state.lines.push({
+          who: "shop",
+          text: "Slack is not connected for this customer. Open the Scalekit link, then click Post to Slack again.",
+          kind: "empty",
+        });
+        window.open(data.link, "_blank", "noopener");
+      } else if (data.ok) {
+        state.lines.push({
+          who: "shop",
+          text: `Posted a status to #${data.channel || channel}.`,
+        });
+      } else {
+        state.lines.push({
+          who: "shop",
+          text: data.error || "Slack did not accept the post.",
+          kind: "error",
+        });
+      }
+      showRaw(data);
+      renderLog();
+      btn.disabled = false;
+      btn.textContent = "Post to Slack";
+    }
+
+    async function seed() {
+      const btn = document.getElementById("seed");
+      btn.disabled = true;
+      btn.textContent = "Saving…";
+      const data = await readJson(await fetch("/api/seed", { method: "POST" }));
+      showRaw(data);
+      state.lines.push({
+        who: "shop",
+        text: data.ok ? "Notes saved. Ask a question." : (data.error || "Could not save notes."),
+        kind: data.ok ? "" : "error",
+      });
+      renderLog();
+      btn.disabled = false;
+      btn.textContent = "Save this customer’s notes";
+    }
+
+    async function tryBob() {
+      const data = await readJson(await fetch("/api/guest", { method: "POST" }));
+      if (!data.ok) return;
+      state.customer = "bob";
+      state.role = data.role;
+      state.guest = true;
+      state.lines = [];
+      BOOT.customer = "bob";
+      BOOT.guest = true;
+      showView();
+    }
+
+    async function backAlice() {
+      await fetch("/api/guest/clear", { method: "POST" });
+      window.location.reload();
+    }
+
+    async function bind(name) {
+      const data = await readJson(await fetch("/api/bind", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ customer: name }),
+      }));
+      if (!data.ok) {
+        state.lines = [{ who: "shop", text: data.error || "Could not bind.", kind: "error" }];
+        return;
+      }
+      state.customer = data.customer;
+      state.role = data.role;
+      BOOT.customer = data.customer;
+      showView();
+    }
+
+    document.getElementById("bind-alice").onclick = () => bind("alice");
+    document.getElementById("try-bob-gate").onclick = tryBob;
+    document.getElementById("try-bob-bind").onclick = tryBob;
+    document.getElementById("try-bob-shop").onclick = tryBob;
+    document.getElementById("back-alice").onclick = backAlice;
+    document.getElementById("seed").onclick = seed;
+    document.getElementById("slack").onclick = postSlack;
+    const overlay = document.getElementById("seq-overlay");
+    const frame = document.getElementById("seq-frame");
+    let hoverTimer = 0;
+    function openSeq() {
+      if (!frame.getAttribute("src")) {
+        frame.setAttribute("src", "/diagrams/issue-desk-sequence.html?embed=1");
+      }
+      overlay.hidden = false;
+      overlay.classList.add("is-open");
+      document.getElementById("close-seq").focus();
+    }
+    function closeSeq() {
+      overlay.classList.remove("is-open");
+      overlay.hidden = true;
+    }
+    document.getElementById("open-seq").onclick = openSeq;
+    document.getElementById("open-seq-gate").onclick = openSeq;
+    document.getElementById("close-seq").onclick = closeSeq;
+    document.getElementById("open-seq").addEventListener("mouseenter", () => {
+      if (window.matchMedia("(hover: hover) and (pointer: fine)").matches === false) return;
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      hoverTimer = window.setTimeout(openSeq, 450);
+    });
+    document.getElementById("open-seq").addEventListener("mouseleave", () => {
+      window.clearTimeout(hoverTimer);
+    });
+    overlay.addEventListener("click", (ev) => {
+      if (ev.target === overlay) closeSeq();
+    });
+    document.addEventListener("keydown", (ev) => {
+      if (ev.key === "Escape" && overlay.classList.contains("is-open")) closeSeq();
+    });
+    const wide = window.matchMedia("(min-width: 64rem)");
+    function syncHow() {
+      if (wide.matches) document.getElementById("how").open = true;
+    }
+    wide.addEventListener("change", syncHow);
+    syncHow();
+    showView();
+  </script>
+</body>
+</html>

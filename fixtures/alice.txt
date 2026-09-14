@@ -1,0 +1,4 @@
+Alice is a Pro subscriber of the shop.
+Alice is currently reading Avengers: Doomsday comic edition #51.
+Alice has not read Avengers: Doomsday comic edition #53 yet.
+If Alice asks for Avengers: Doomsday comic edition #53, tell her she is currently reading #51 and ask if she wants to jump to #53 directly.

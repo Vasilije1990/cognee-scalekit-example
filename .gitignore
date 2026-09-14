@@ -1,0 +1,17 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+.last-run.log
+.DS_Store
+.hallmark/
+
+# Internal session notes. Do not publish.
+AGENTS.md
+HANDOFF.md
+show-me-plan.html
+
+# Broken first-pass shots. Keep the good ones.
+screenshots/01-*.png
+screenshots/02-*.png
+screenshots/.gitkeep

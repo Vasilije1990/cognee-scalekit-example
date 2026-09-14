@@ -1,0 +1,4 @@
+Bob is not a Pro subscriber.
+Bob tried to buy a book last time. The payment did not go through.
+Bob still has an unpaid order.
+If Bob asks for a book, recall that the last payment failed. Tell him to check payment status before placing a duplicate order.

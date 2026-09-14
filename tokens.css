@@ -1,0 +1,47 @@
+/* Shop counter · cool newsprint, comic-cover stamp */
+:root {
+  --color-paper: #e7eaee;
+  --color-paper-2: #dce1e7;
+  --color-ink: #16181c;
+  --color-ink-2: #2a2e34;
+  --color-muted: #5a616b;
+  --color-rule: #b7bec7;
+  --color-stamp: #c41e3a;
+  --color-stamp-ink: #fff7f6;
+  --color-you: #243044;
+  --color-focus: #9b1830;
+  --color-done: #2f5d3a;
+  --color-error: #9b1830;
+  --color-cognee: #2a2e34;
+  --color-scalekit: #2a2e34;
+
+  --font-display: "Instrument Serif", "Times New Roman", serif;
+  --font-body: "Figtree", "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --font-wordmark: "Instrument Serif", "Times New Roman", serif;
+
+  --space-3xs: 0.125rem;
+  --space-2xs: 0.25rem;
+  --space-xs: 0.5rem;
+  --space-sm: 0.75rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2.5rem;
+  --space-2xl: 4rem;
+
+  --text-xs: 0.8rem;
+  --text-sm: 0.9375rem;
+  --text-base: 1.0625rem;
+  --text-md: 1.25rem;
+  --text-lg: 1.6rem;
+  --text-xl: 2rem;
+  --text-display: clamp(2.1rem, 4vw + 0.4rem, 3.4rem);
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-short: 180ms;
+
+  --radius: 2px;
+  --radius-pill: 999px;
+  --rule-hair: 1px;
+  --z-sticky: 200;
+}
