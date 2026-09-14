@@ -106,6 +106,7 @@ Each email must contain `+sktest` before `@`. Official guide: [Test users](https
 ## Install the app
 
 ```bash
+git clone https://github.com/scalekit-developers/cogni-x-sample.git
 cd cogni-x-sample
 uv venv --python 3.12 .venv
 uv pip install --python .venv/bin/python -r requirements.txt
