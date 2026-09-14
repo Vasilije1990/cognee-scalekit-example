@@ -113,7 +113,7 @@ Login is enough for Path 2. Slack still needs a Slack connection in this same en
 ## Install the app
 
 ```bash
-git clone https://github.com/scalekit-developers/cogni-x-sample.git
+git clone https://github.com/scalekit-developers/cognee-scalekit-example.git
 cd cogni-x-sample
 uv venv --python 3.12 .venv
 uv pip install --python .venv/bin/python -r requirements.txt
