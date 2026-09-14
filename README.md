@@ -1,18 +1,16 @@
-# Issue desk
+# Book Issue Desk
 
-Scalekit × Cognee shop chat. You sign in as one customer. Then you send a fixed question.
+Local demo of a comic-shop issue desk. Scalekit signs the customer in. Cognee Cloud recalls that customer’s notes.
 
-Memory replies from that customer only. Alice does not see Bob’s payment. Bob does not see Alice’s comic.
+This repository runs on localhost. Scalekit and Cognee Cloud power it. You do not deploy it.
 
-**Storage** is the source note (`fixtures/alice.txt`, `fixtures/bob.txt`).
+The desk answers Alice or Bob from that customer’s notes only. Scalekit signs the customer in, and can post to Slack as that customer. Cognee Cloud stores the notes and recalls them when the desk asks. Slack tokens stay in Scalekit. Cognee never receives them.
 
-**Cognee** is memory. You ask. It recalls from that customer’s dataset. It is not the source file.
+Alice does not see Bob’s failed payment. Bob does not see Alice’s comic.
 
-**Scalekit** is login and hands. SaaSKit names the signed-in person. AgentKit can post to Slack as that person. The Slack token never enters Cognee.
+The source notes are `fixtures/alice.txt` and `fixtures/bob.txt`. Those files are not memory. You save them into Cognee first. Then a question recalls from that customer’s dataset.
 
-This repo runs on localhost. You do not deploy it.
-
-You need two free accounts. The demo calls live Cognee Cloud and Scalekit. You do not need those accounts before you read this page. Create them in the steps below.
+You need a free Cognee Cloud account and a free Scalekit account. Create them in the steps below. The demo calls the live APIs.
 
 ## What first success looks like
 
@@ -24,13 +22,13 @@ The desk is working when Bob’s memory answers from Bob’s notes.
 4. Click the fixed question about ordering the book again
 5. The reply recalls that Bob’s last payment failed
 
-That win uses Cognee. Scalekit login is the next win. Slack is optional.
+That path proves Cognee recall without a Scalekit login. The next path signs Alice in with Scalekit. Slack is optional.
 
 ![Bob memory recalls a failed payment](screenshots/06-desk-bob-guest-recall-payment.png)
 
 ## How it works
 
-Scalekit names the customer. Cognee recalls that customer’s memory. If you post to Slack, Scalekit holds the Slack token.
+Scalekit names the signed-in customer. Cognee recalls that customer’s memory. If you post to Slack, Scalekit holds the Slack token and sends the message as that customer.
 
 ![Sequence: Scalekit login, Cognee memory, Slack as Alice](screenshots/07-sequence-alice-scalekit-cognee-slack.png)
 
@@ -59,7 +57,14 @@ Official guide: [Cognee Cloud sign-up](https://docs.cognee.ai/cognee-cloud/sign-
 
 ## Create a Scalekit account
 
-Scalekit hosts login and can later post to Slack.
+This demo uses one Scalekit Development environment for two jobs:
+
+| Job | When you need it | What you configure |
+|-----|------------------|--------------------|
+| Hosted login | Path 2 below, when Alice or Bob signs in | Redirect URLs, one-time passwords, test users |
+| Slack posts as that customer | Optional last section | A Slack connection in the same environment |
+
+Do the login setup here. Slack setup is in [Post to Slack](#optional-post-to-slack).
 
 1. Open [app.scalekit.com](https://app.scalekit.com).
 2. Create a free account. Scalekit creates a Development environment for you.
@@ -67,7 +72,7 @@ Scalekit hosts login and can later post to Slack.
 4. Open **Developers → Settings → API Credentials**.
 5. Copy `SCALEKIT_ENVIRONMENT_URL`, `SCALEKIT_CLIENT_ID`, and `SCALEKIT_CLIENT_SECRET`.
 
-Official guide: [SaaSKit quickstart](https://docs.scalekit.com/authenticate/fsa/quickstart/).
+Official guide: [Scalekit login quickstart](https://docs.scalekit.com/authenticate/fsa/quickstart/).
 
 ### Register localhost URLs
 
@@ -102,6 +107,8 @@ Test users let you sign in with a fixed code. You do not wait for email.
 5. Save. Reload the page and confirm the list is still there.
 
 Each email must contain `+sktest` before `@`. Official guide: [Test users](https://docs.scalekit.com/authenticate/run-e2e-tests/).
+
+Login is enough for Path 2. Slack still needs a Slack connection in this same environment.
 
 ## Install the app
 
@@ -143,9 +150,9 @@ If port 5001 is already in use, stop the other process first.
 
 ## Use the desk
 
-**Alice** is Pro. She asks for Avengers: Doomsday #53. Memory should recall she is on #51 and ask if she wants to jump to #53.
+**Alice** is on the shop’s Pro plan. She asks for Avengers: Doomsday #53. Memory should recall she is currently reading #51 and ask if she wants to jump to #53.
 
-**Bob** is not Pro. He asks to order the book again. Memory should recall the last payment failed and tell him to check payment before a duplicate order.
+**Bob** is not on the Pro plan. He asks to order the book again. Memory should recall the last payment failed and tell him to check payment before a duplicate order.
 
 ### Path 1 — Bob without login
 
@@ -180,13 +187,13 @@ If Alice still does not bind after login, copy her user id from the JWT panel. P
 
 Slack is not required for first success.
 
-1. In Scalekit, open **AgentKit → Connections**.
+1. In the Scalekit dashboard, open **Connections**.
 2. Add Slack. Set the connection name to `slack`.
 3. Connect your Slack account when the dashboard asks.
 4. Set `SLACK_CHANNEL` in `.env` to your channel name, without `#`.
 5. In the desk, use the Slack action after you have a customer.
 
-The Slack token stays in Scalekit. It never enters Cognee.
+Scalekit stores the Slack token and posts as the signed-in customer. Cognee never receives that token.
 
 ![Alice status posted to Slack](screenshots/04-slack-pocket-agents-alice-status.png)
 
@@ -210,3 +217,10 @@ These scripts use the same `.env`.
 .venv/bin/python loop.py --user bob
 .venv/bin/python slack_post.py --user alice --channel general --text "Acme renews 1 Nov. Refund window is 30 days."
 ```
+
+## License
+
+[MIT](LICENSE)
+
+Scalekit docs: [login quickstart](https://docs.scalekit.com/authenticate/fsa/quickstart/).  
+Cognee docs: [Cloud sign-up](https://docs.cognee.ai/cognee-cloud/sign-up).
