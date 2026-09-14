@@ -1,46 +1,40 @@
 # Book Issue Desk
 
-Local demo of a comic-shop issue desk. Scalekit signs the customer in. Cognee Cloud recalls that customer’s notes.
+This repo is a local comic-shop desk for two customers, Alice and Bob. You save each customer's notes, ask a fixed question, and Cognee Cloud answers from that customer's dataset only.
 
-This repository runs on localhost. Scalekit and Cognee Cloud power it. You do not deploy it.
+Scalekit is for the parts after that first run: hosted login, and an optional Slack post as the signed-in customer. The desk never sends a Slack token to Cognee.
 
-The desk answers Alice or Bob from that customer’s notes only. Scalekit signs the customer in, and can post to Slack as that customer. Cognee Cloud stores the notes and recalls them when the desk asks. Slack tokens stay in Scalekit. Cognee never receives them.
+The app listens on http://localhost:5001.
 
-Alice does not see Bob’s failed payment. Bob does not see Alice’s comic.
-
-The source notes are `fixtures/alice.txt` and `fixtures/bob.txt`. Those files are not memory. You save them into Cognee first. Then a question recalls from that customer’s dataset.
-
-You need a free Cognee Cloud account and a free Scalekit account. Create them in the steps below. The demo calls the live APIs.
-
-## What first success looks like
-
-The desk is working when Bob’s memory answers from Bob’s notes.
+## See Bob's failed payment come back
 
 1. Open http://localhost:5001
 2. Click **Try Bob without login**
-3. Click **Save this customer’s notes**
-4. Click the fixed question about ordering the book again
-5. The reply recalls that Bob’s last payment failed
+3. Click **Save this customer's notes**
+4. Click the question about ordering the book again
+5. The reply should mention that Bob's last payment failed
 
-That path proves Cognee recall without a Scalekit login. The next path signs Alice in with Scalekit. Slack is optional.
+You can do this before you create a Scalekit account. Login is the next section after the desk is running. Slack is last and optional.
 
 ![Bob memory recalls a failed payment](screenshots/06-desk-bob-guest-recall-payment.png)
 
-## How it works
+## What Scalekit and Cognee do here
 
-Scalekit names the signed-in customer. Cognee recalls that customer’s memory. If you post to Slack, Scalekit holds the Slack token and sends the message as that customer.
+`fixtures/alice.txt` and `fixtures/bob.txt` are the source notes. They are not the memory store. You click **Save this customer's notes** to write them into Cognee Cloud under dataset `alice` or `bob`. Later questions read from that dataset.
+
+If Alice or Bob signs in, Scalekit tells the desk who is at the browser. The desk then picks the matching dataset. If you post to Slack, Scalekit holds the Slack token and sends the message.
 
 ![Sequence: Scalekit login, Cognee memory, Slack as Alice](screenshots/07-sequence-alice-scalekit-cognee-slack.png)
 
-## What you need on this machine
+## Install uv and Python 3.12
 
-Install [uv](https://docs.astral.sh/uv/). Use Python 3.12 through `uv`. Homebrew `python3` on some Macs is 3.14. Do not use that interpreter.
+Install [uv](https://docs.astral.sh/uv/). Create the virtualenv with Python 3.12 through `uv`. Homebrew `python3` on some Macs is 3.14 and will fail the install.
 
 You also need a browser and a terminal.
 
 ## Create a Cognee Cloud account
 
-Cognee Cloud stores each customer’s memory.
+You need a Cognee Cloud workspace so the desk can write and recall notes.
 
 1. Open [Create a Cognee account](https://docs.cognee.ai/cognee-cloud/sign-up).
 2. Go to [platform.cognee.ai](https://platform.cognee.ai/sign-up).
@@ -51,23 +45,21 @@ Cognee Cloud stores each customer’s memory.
 7. Copy the key once. The console shows it only once.
 8. Copy the tenant base URL from the same page. It looks like `https://your-tenant.aws.cognee.ai`. Include `https://`.
 
-No credit card is required for the free workspace.
-
 Official guide: [Cognee Cloud sign-up](https://docs.cognee.ai/cognee-cloud/sign-up).
 
 ## Create a Scalekit account
 
-This demo uses one Scalekit Development environment for two jobs:
+You need one Scalekit Development environment for login. The same environment can later hold a Slack connection.
 
 | Job | When you need it | What you configure |
 |-----|------------------|--------------------|
-| Hosted login | Path 2 below, when Alice or Bob signs in | Redirect URLs, one-time passwords, test users |
-| Slack posts as that customer | Optional last section | A Slack connection in the same environment |
+| Hosted login | After the desk is running, when Alice or Bob signs in | Redirect URLs, one-time passwords, test users |
+| Slack posts as that customer | Last section, optional | A Slack connection in the same environment |
 
-Do the login setup here. Slack setup is in [Post to Slack](#optional-post-to-slack).
+Do the login setup here. Slack setup is in [Post a status to Slack](#post-a-status-to-slack).
 
 1. Open [app.scalekit.com](https://app.scalekit.com).
-2. Create a free account. Scalekit creates a Development environment for you.
+2. Create an account. Scalekit creates a Development environment for you.
 3. Stay in **Development**.
 4. Open **Developers → Settings → API Credentials**.
 5. Copy `SCALEKIT_ENVIRONMENT_URL`, `SCALEKIT_CLIENT_ID`, and `SCALEKIT_CLIENT_SECRET`.
@@ -108,13 +100,13 @@ Test users let you sign in with a fixed code. You do not wait for email.
 
 Each email must contain `+sktest` before `@`. Official guide: [Test users](https://docs.scalekit.com/authenticate/run-e2e-tests/).
 
-Login is enough for Path 2. Slack still needs a Slack connection in this same environment.
+Login is enough for Alice through Scalekit. Slack still needs a Slack connection in this same environment.
 
 ## Install the app
 
 ```bash
 git clone https://github.com/scalekit-developers/cognee-scalekit-example.git
-cd cogni-x-sample
+cd cognee-scalekit-example
 uv venv --python 3.12 .venv
 uv pip install --python .venv/bin/python -r requirements.txt
 cp .env.example .env
@@ -148,24 +140,24 @@ Open http://localhost:5001
 
 If port 5001 is already in use, stop the other process first.
 
-## Use the desk
+## Ask Alice or Bob a question
 
-**Alice** is on the shop’s Pro plan. She asks for Avengers: Doomsday #53. Memory should recall she is currently reading #51 and ask if she wants to jump to #53.
+Alice is on the shop's Pro plan. She asks for Avengers: Doomsday #53. The reply should say she is currently reading #51 and ask if she wants to jump to #53.
 
-**Bob** is not on the Pro plan. He asks to order the book again. Memory should recall the last payment failed and tell him to check payment before a duplicate order.
+Bob is not on the Pro plan. He asks to order the book again. The reply should say the last payment failed and tell him to check payment before a duplicate order.
 
 ### Path 1 — Bob without login
 
-Use this path first. It proves Cognee memory.
+Do this first. You do not need to sign in.
 
 1. Click **Try Bob without login**.
-2. Click **Save this customer’s notes**. Wait until that finishes.
-3. Click the fixed question. Wait. The reply is live Cognee recall.
-4. The page labels this as guest Bob. This is not a Scalekit login.
+2. Click **Save this customer's notes**. Wait until that finishes.
+3. Click the fixed question. Wait. The reply is a live Cognee recall.
+4. The page labels this as guest Bob. Guest Bob is not a Scalekit session.
 
 ### Path 2 — Alice with Scalekit
 
-Use this path next. It proves hosted login.
+Do this after Path 1 works. Alice signs in through Scalekit hosted login.
 
 1. Click **Sign in as Alice**.
 2. Enter `alice+sktest@demo.com`.
@@ -174,8 +166,8 @@ Use this path next. It proves hosted login.
 
 3. Enter OTP `424242`.
 4. If the access token has no email, click **Continue as Alice** once.
-5. Click **Save this customer’s notes** if you have not seeded Alice yet.
-6. Click the fixed Avengers question. Wait. The reply is Alice’s memory.
+5. Click **Save this customer's notes** if you have not seeded Alice yet.
+6. Click the fixed Avengers question. Wait. The reply is Alice's memory.
 
 Log out. Sign in as `bob+sktest@demo.com` if you want Bob through Scalekit instead of the guest button.
 
@@ -183,9 +175,9 @@ The default Scalekit access token includes `sub`. It does not include `email`. T
 
 If Alice still does not bind after login, copy her user id from the JWT panel. Put it in `.env` as `SCALEKIT_ALICE_SUB=usr_...`. Restart the server.
 
-## Optional: post to Slack
+## Post a status to Slack
 
-Slack is not required for first success.
+Skip this section if you only want recall and login.
 
 1. In the Scalekit dashboard, open **Connections**.
 2. Add Slack. Set the connection name to `slack`.
@@ -193,7 +185,7 @@ Slack is not required for first success.
 4. Set `SLACK_CHANNEL` in `.env` to your channel name, without `#`.
 5. In the desk, use the Slack action after you have a customer.
 
-Scalekit stores the Slack token and posts as the signed-in customer. Cognee never receives that token.
+Scalekit stores the Slack token and posts as the signed-in customer.
 
 ![Alice status posted to Slack](screenshots/04-slack-pocket-agents-alice-status.png)
 
@@ -204,11 +196,11 @@ Scalekit stores the Slack token and posts as the signed-in customer. Cognee neve
 | Missing env error on start | Fill every required row in the table above. Restart uvicorn. |
 | Redirect URI mismatch | The dashboard callback URL and `SCALEKIT_REDIRECT_URI` must match exactly. |
 | OTP email never arrives | Use the test-user emails and code `424242`. Confirm Magic Link & OTP is on. |
-| Empty Cognee reply | Click **Save this customer’s notes**. Wait. Ask again. |
+| Empty Cognee reply | Click **Save this customer's notes**. Wait. Ask again. |
 | Python import errors | Recreate `.venv` with `uv venv --python 3.12`. |
 | Port already in use | Stop the other process on 5001. |
 
-## Optional CLI
+## Run the CLI scripts
 
 These scripts use the same `.env`.
 
@@ -222,5 +214,5 @@ These scripts use the same `.env`.
 
 [MIT](LICENSE)
 
-Scalekit docs: [login quickstart](https://docs.scalekit.com/authenticate/fsa/quickstart/).  
+Scalekit docs: [login quickstart](https://docs.scalekit.com/authenticate/fsa/quickstart/).
 Cognee docs: [Cloud sign-up](https://docs.cognee.ai/cognee-cloud/sign-up).
