@@ -76,7 +76,7 @@ All of them live in `loop.py`; `app.py` is routes and cookies.
 | Function | Cognee call | Note |
 |---|---|---|
 | `connect()` | `cognee.serve(url, api_key)` | Once per process (FastAPI lifespan). After this every SDK call goes to Cloud |
-| `seed_user()` | `cognee.remember(text, dataset_name=…)` then `cognee.improve(…)` | `remember` already runs improve; the explicit call makes the seed block until recall works |
+| `seed_user()` | `cognee.remember(text, dataset_name=…)` then `cognee.improve(…)` | On Cloud, `remember` returns `status: running` before the note is stored. The seed then polls `GET /api/v1/datasets/{id}/data` until a document appears, or returns a timeout. It does not claim the note is saved before that. |
 | `recall_user()` | `cognee.recall(q, query_type=HYBRID_COMPLETION, datasets=[name])` | Pinned type so item 0 is always the LLM answer. Retries HTTP 409 with backoff |
 | `push_user()` | `cognee.push(name, url=…, api_key=…, mode="preserve")` | Exports the local graph (COGX) and imports it on Cloud |
 | `index_code()` | `cognee.remember(path_or_git_url, content_type="code", dataset_name="desk_code")` | enola code graph, deterministic, no LLM. Cloud clones a URL; a local path only works locally |
@@ -125,8 +125,10 @@ Each one uses something the demo does not yet.
 ## 4. Pitfalls that cost people an hour
 
 - **Python 3.14** breaks the install. `uv venv --python 3.12`.
-- **Cloud `remember` returns before the graph is queryable.** That is why
-  `seed_user()` also calls `improve()`. If recall is empty, wait and retry.
+- **Cloud `remember` returns before the graph is queryable.** `improve()`
+  can skip every stage. `seed_user()` polls the dataset data endpoint and
+  returns an error on timeout. Do not treat the click as saved until the
+  page says the notes are saved.
 - **HTTP 409 on recall** = a pipeline still holds the dataset lock.
   `recall_user()` backs off 1s, 2s, 4s. Do not hammer it.
 - **Local mode is slow per answer?** `AUTO_FEEDBACK=false` in `.env` removes

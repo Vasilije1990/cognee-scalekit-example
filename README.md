@@ -211,8 +211,8 @@ The questions are fixed. You cannot type your own. Each customer has two buttons
 Do this first. It does not touch Scalekit at all.
 
 1. Click **Try Bob without login**. The app sets a cookie that says "this browser is Bob".
-2. Click **Save this customer's notes**. This sends `fixtures/bob.txt` to Cognee Cloud. Wait until the page says it finished.
-3. Click the fixed question. Wait. The reply comes from Cognee Cloud, live, right now.
+2. Click **Save this customer's notes**. This sends `fixtures/bob.txt` to Cognee (local or Cloud, per the badge). Wait until the page says it finished.
+3. Click the fixed question. Wait. The reply comes from Cognee, live, right now.
 4. The page says "guest Bob". This means nobody logged in. Scalekit was not involved.
 
 ### Path 2 — Alice with Scalekit

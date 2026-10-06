@@ -12,6 +12,7 @@ import argparse
 import asyncio
 import os
 import sys
+import time
 from pathlib import Path
 
 import cognee
@@ -114,11 +115,15 @@ CODE_QUESTIONS = (
 
 
 def memory_mode() -> str:
-    """'cloud' or 'local'. Explicit MEMORY_MODE wins; else cloud when a tenant is set."""
+    """'cloud' or 'local'. Explicit MEMORY_MODE wins; else cloud when a tenant URL is set.
+
+    A URL without COGNEE_API_KEY still selects cloud. check_mode_env() reports
+    the missing key. Local is the fallback only when the URL is absent.
+    """
     explicit = (os.getenv("MEMORY_MODE") or "").strip().lower()
     if explicit in ("cloud", "local"):
         return explicit
-    return "cloud" if cloud_configured() else "local"
+    return "cloud" if os.getenv("COGNEE_BASE_URL") else "local"
 
 
 def cloud_configured() -> bool:
@@ -212,6 +217,40 @@ def is_conflict(exc: BaseException) -> bool:
     return "409" in text or "Conflict" in text
 
 
+def is_empty_memory(exc: BaseException) -> bool:
+    """True when this customer has no stored notes yet."""
+    if type(exc).__name__ in {"DatasetNotFoundError", "NoDataError"}:
+        return True
+    text = str(exc).lower()
+    return (
+        "dataset(s) not found" in text
+        or "dataset not found" in text
+        or "no data has been added" in text
+        or "no searchable memory" in text
+        or "no data found" in text
+    )
+
+
+def _field(result, key, default=None):
+    """Read one field from a RememberResult or from the raw Cloud dict."""
+    if isinstance(result, dict):
+        return result.get(key, default)
+    return getattr(result, key, default)
+
+
+def _items(result) -> list:
+    items = _field(result, "items")
+    return items if isinstance(items, list) else []
+
+
+def _text_id(result, *keys: str) -> str | None:
+    for key in keys:
+        value = _field(result, key)
+        if value:
+            return str(value)
+    return None
+
+
 def user_spec(user: str) -> dict:
     spec = USERS.get(user)
     if spec is None:
@@ -223,19 +262,75 @@ def user_spec(user: str) -> dict:
 
 
 async def seed_user(user: str) -> dict:
-    """Write the customer's note into their dataset and finish the graph."""
+    """Write the customer's note into their dataset and finish the graph.
+
+    On Cloud, remember() returns status "running" before the note is stored.
+    This waits until the dataset data endpoint lists a document, or raises
+    TimeoutError. Local mode stores the note in this process, so it does not poll.
+    """
     spec = user_spec(user)
     note = spec["note"].read_text(encoding="utf-8").strip()
     result = await cognee.remember(note, dataset_name=user)
-    # remember() already runs improve() (self_improvement=True). Cloud may hand
-    # back before the graph is queryable, so one explicit improve() makes the
-    # seed call block until it is. improve is watermark-gated: when nothing is
-    # new it reports already_completed and costs no LLM calls.
+    # improve is watermark-gated: when nothing is new it reports
+    # already_completed and costs no LLM calls. On Cloud it can also skip
+    # every stage, so the poll below is what decides "saved".
     await cognee.improve(user)
+    await wait_until_stored(user, result)
     return {
-        "status": getattr(result, "status", None),
-        "pipeline_run_id": str(getattr(result, "pipeline_run_id", "") or "") or None,
+        "status": _field(result, "status"),
+        "pipeline_run_id": _text_id(result, "pipeline_run_id", "pipelineRunId"),
     }
+
+
+def _rows(payload) -> list:
+    if isinstance(payload, list):
+        return payload
+    if isinstance(payload, dict):
+        for key in ("data", "items", "datasets", "results"):
+            value = payload.get(key)
+            if isinstance(value, list):
+                return value
+    return []
+
+
+async def _dataset_id_by_name(client, name: str) -> str | None:
+    session = await client._get_session()
+    async with session.get(f"{client.service_url}/api/v1/datasets/") as resp:
+        if resp.status >= 400:
+            return None
+        payload = await resp.json()
+    for row in _rows(payload):
+        if isinstance(row, dict) and row.get("name") == name and row.get("id"):
+            return str(row["id"])
+    return None
+
+
+async def wait_until_stored(user: str, remember_result, timeout_s: float = 45.0) -> None:
+    """Poll Cloud until this customer's dataset lists a document."""
+    from cognee.api.v1.serve.state import get_remote_client
+
+    client = get_remote_client()
+    if client is None:
+        return
+
+    deadline = time.monotonic() + timeout_s
+    dataset_id = _text_id(remember_result, "dataset_id", "datasetId")
+    while True:
+        if not dataset_id:
+            dataset_id = await _dataset_id_by_name(client, user)
+        if dataset_id:
+            try:
+                rows = await client.list_data(dataset_id)
+            except RuntimeError:
+                rows = []
+            if _rows(rows):
+                return
+        if time.monotonic() >= deadline:
+            raise TimeoutError(
+                f"Cognee accepted the notes for {user}, but they are not stored yet. "
+                "Wait a moment and click Save this customer's notes again."
+            )
+        await asyncio.sleep(2)
 
 
 async def recall_user(user: str, question: str | None = None, attempts: int = 4):
@@ -283,9 +378,9 @@ async def index_code(mode: str) -> dict:
     """Build the code graph of this repo. Deterministic; no LLM calls."""
     source = code_repo_source(mode)
     result = await cognee.remember(source, content_type="code", dataset_name=CODE_DATASET)
-    items = getattr(result, "items", None) or []
+    items = _items(result)
     return {
-        "status": getattr(result, "status", None),
+        "status": _field(result, "status"),
         "source": source,
         "dataset": CODE_DATASET,
         "items": [

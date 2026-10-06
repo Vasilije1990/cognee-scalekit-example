@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Request
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from scalekit import ScalekitClient
+from scalekit.common.exceptions import ScalekitNotFoundException
 from scalekit.frameworks.fastapi import ScalekitAuth
 
 from loop import (
@@ -23,6 +24,7 @@ from loop import (
     code_repo_source,
     connect,
     index_code,
+    is_empty_memory,
     memory_mode,
     push_user,
     recall_user,
@@ -376,6 +378,14 @@ async def api_ask(request: Request):
     try:
         results = await recall_user(name, picked["text"])
     except Exception as exc:
+        if is_empty_memory(exc):
+            return JSONResponse(
+                {
+                    "ok": False,
+                    "error": f"No memory for {name} yet. Click Save this customer's notes first.",
+                },
+                status_code=400,
+            )
         return JSONResponse({"ok": False, "error": str(exc)}, status_code=400)
     answer = short_recall(results)
     expect = picked["expect"]
@@ -478,12 +488,23 @@ async def api_slack(request: Request):
         "Memory is that customer’s Cognee dataset only."
     )
     actions = slack_actions()
-    account = actions.get_or_create_connected_account(connection_name, name).connected_account
+    missing = (
+        f'No Slack connection named "{connection_name}" in this Scalekit environment. '
+        "Add it under AgentKit → Connections (see README → Post a status to Slack), "
+        "or set SLACK_CONNECTION_NAME."
+    )
+    try:
+        account = actions.get_or_create_connected_account(connection_name, name).connected_account
+    except ScalekitNotFoundException:
+        return JSONResponse({"ok": False, "error": missing}, status_code=400)
     if account is None or account.status != "ACTIVE":
-        link = actions.get_authorization_link(
-            connection_name=connection_name,
-            identifier=name,
-        ).link
+        try:
+            link = actions.get_authorization_link(
+                connection_name=connection_name,
+                identifier=name,
+            ).link
+        except ScalekitNotFoundException:
+            return JSONResponse({"ok": False, "error": missing}, status_code=400)
         return {"ok": False, "product": "scalekit", "link": link}
     response = actions.request(
         connection_name=connection_name,

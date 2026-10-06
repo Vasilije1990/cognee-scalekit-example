@@ -629,7 +629,13 @@
     }
 
     async function readJson(res) {
-      const data = await res.json();
+      const text = await res.text();
+      let data;
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch {
+        data = { ok: false, error: text || "request failed" };
+      }
       if (!res.ok && !data.error) data.error = "request failed";
       return data;
     }
@@ -639,25 +645,28 @@
       state.lines.push({ who: "shop", text: "Checking memory…", kind: "empty" });
       renderLog();
       document.querySelectorAll("#prompts button").forEach((btn) => { btn.disabled = true; });
-      const data = await readJson(await fetch("/api/ask", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ question_id: qid }),
-      }));
-      state.lines.pop();
-      if (data.ok && data.answer) {
-        state.lines.push({ who: "shop", text: data.answer });
-        document.getElementById("memory-note").textContent = data.answer;
-      } else {
-        state.lines.push({
-          who: "shop",
-          text: data.error || "Memory did not answer. Save this customer’s notes, wait, then ask again.",
-          kind: "error",
-        });
+      try {
+        const data = await readJson(await fetch("/api/ask", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ question_id: qid }),
+        }));
+        state.lines.pop();
+        if (data.ok && data.answer) {
+          state.lines.push({ who: "shop", text: data.answer });
+          document.getElementById("memory-note").textContent = data.answer;
+        } else {
+          state.lines.push({
+            who: "shop",
+            text: data.error || "Memory did not answer. Save this customer’s notes, wait, then ask again.",
+            kind: "error",
+          });
+        }
+        showRaw(data);
+        renderLog();
+      } finally {
+        document.querySelectorAll("#prompts button").forEach((btn) => { btn.disabled = false; });
       }
-      showRaw(data);
-      renderLog();
-      document.querySelectorAll("#prompts button").forEach((btn) => { btn.disabled = false; });
     }
 
     async function postSlack() {
@@ -665,64 +674,73 @@
       const channel = BOOT.channel || "general";
       btn.disabled = true;
       btn.textContent = "Posting…";
-      const data = await readJson(await fetch("/api/slack", { method: "POST" }));
-      if (data.link) {
-        state.lines.push({
-          who: "shop",
-          text: "Slack is not connected for this customer. Open the Scalekit link, then click Post to Slack again.",
-          kind: "empty",
-        });
-        window.open(data.link, "_blank", "noopener");
-      } else if (data.ok) {
-        state.lines.push({
-          who: "shop",
-          text: `Posted a status to #${data.channel || channel}.`,
-        });
-      } else {
-        state.lines.push({
-          who: "shop",
-          text: data.error || "Slack did not accept the post.",
-          kind: "error",
-        });
+      try {
+        const data = await readJson(await fetch("/api/slack", { method: "POST" }));
+        if (data.link) {
+          state.lines.push({
+            who: "shop",
+            text: "Slack is not connected for this customer. Open the Scalekit link, then click Post to Slack again.",
+            kind: "empty",
+          });
+          window.open(data.link, "_blank", "noopener");
+        } else if (data.ok) {
+          state.lines.push({
+            who: "shop",
+            text: `Posted a status to #${data.channel || channel}.`,
+          });
+        } else {
+          state.lines.push({
+            who: "shop",
+            text: data.error || "Slack did not accept the post.",
+            kind: "error",
+          });
+        }
+        showRaw(data);
+        renderLog();
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Post to Slack";
       }
-      showRaw(data);
-      renderLog();
-      btn.disabled = false;
-      btn.textContent = "Post to Slack";
     }
 
     async function seed() {
       const btn = document.getElementById("seed");
       btn.disabled = true;
       btn.textContent = "Saving…";
-      const data = await readJson(await fetch("/api/seed", { method: "POST" }));
-      showRaw(data);
-      state.lines.push({
-        who: "shop",
-        text: data.ok ? "Notes saved. Ask a question." : (data.error || "Could not save notes."),
-        kind: data.ok ? "" : "error",
-      });
-      renderLog();
-      btn.disabled = false;
-      btn.textContent = "Save this customer’s notes";
+      try {
+        const data = await readJson(await fetch("/api/seed", { method: "POST" }));
+        showRaw(data);
+        state.lines.push({
+          who: "shop",
+          text: data.ok ? "Notes saved. Ask a question." : (data.error || "Could not save notes."),
+          kind: data.ok ? "" : "error",
+        });
+        renderLog();
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Save this customer’s notes";
+      }
     }
 
     async function push() {
       const btn = document.getElementById("push");
       btn.disabled = true;
       btn.textContent = "Pushing…";
-      const data = await readJson(await fetch("/api/push", { method: "POST" }));
-      showRaw(data);
-      state.lines.push({
-        who: "shop",
-        text: data.ok
-          ? `Pushed ${data.nodes} nodes and ${data.edges} edges to Cloud dataset “${data.target}”. No LLM calls were made on Cloud.`
-          : (data.error || "Could not push."),
-        kind: data.ok ? "" : "error",
-      });
-      renderLog();
-      btn.disabled = false;
-      btn.textContent = "Push this memory to Cloud";
+      try {
+        const data = await readJson(await fetch("/api/push", { method: "POST" }));
+        showRaw(data);
+        state.lines.push({
+          who: "shop",
+          text: data.ok
+            ? `Pushed ${data.nodes} nodes and ${data.edges} edges to Cloud dataset “${data.target}”. No LLM calls were made on Cloud.`
+            : (data.error || "Could not push."),
+          kind: data.ok ? "" : "error",
+        });
+        renderLog();
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Push this memory to Cloud";
+      }
     }
 
     // ---- code graph panel ------------------------------------------------
@@ -758,18 +776,21 @@
       const btn = document.getElementById("code-index");
       setCodeButtons(true);
       btn.textContent = "Indexing…";
-      const data = await readJson(await fetch("/api/code/index", { method: "POST" }));
-      const out = document.getElementById("code-out");
-      out.hidden = false;
-      document.getElementById("code-diagram").hidden = true;
-      document.getElementById("code-summary").textContent = data.ok
-        ? `Indexed ${data.source} into “${data.dataset}”. Ask a question below.`
-        : (data.error || "Indexing failed.");
-      const raw = document.getElementById("code-raw");
-      raw.hidden = false;
-      raw.textContent = JSON.stringify(data, null, 2);
-      btn.textContent = "Index this repo";
-      setCodeButtons(false);
+      try {
+        const data = await readJson(await fetch("/api/code/index", { method: "POST" }));
+        const out = document.getElementById("code-out");
+        out.hidden = false;
+        document.getElementById("code-diagram").hidden = true;
+        document.getElementById("code-summary").textContent = data.ok
+          ? `Indexed ${data.source} into “${data.dataset}”. Ask a question below.`
+          : (data.error || "Indexing failed.");
+        const raw = document.getElementById("code-raw");
+        raw.hidden = false;
+        raw.textContent = JSON.stringify(data, null, 2);
+      } finally {
+        btn.textContent = "Index this repo";
+        setCodeButtons(false);
+      }
     }
 
     async function askCode(qid) {
@@ -782,31 +803,33 @@
       summary.textContent = "Walking the code graph…";
       diagram.hidden = true;
       raw.hidden = true;
-      const data = await readJson(await fetch("/api/code/ask", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ question_id: qid }),
-      }));
-      if (!data.ok) {
-        summary.textContent = data.error || "No answer.";
-        setCodeButtons(false);
-        return;
-      }
-      summary.textContent = data.summary || `${data.question} — operation ${data.operation}`;
-      if (data.diagram && data.diagram_format === "mermaid") {
-        try {
-          const mermaid = await loadMermaid();
-          const { svg } = await mermaid.render("code-svg-" + Date.now(), data.diagram);
-          diagram.innerHTML = svg;
-          diagram.hidden = false;
-        } catch (err) {
-          diagram.textContent = data.diagram;
-          diagram.hidden = false;
+      try {
+        const data = await readJson(await fetch("/api/code/ask", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ question_id: qid }),
+        }));
+        if (!data.ok) {
+          summary.textContent = data.error || "No answer.";
+          return;
         }
+        summary.textContent = data.summary || `${data.question} — operation ${data.operation}`;
+        if (data.diagram && data.diagram_format === "mermaid") {
+          try {
+            const mermaid = await loadMermaid();
+            const { svg } = await mermaid.render("code-svg-" + Date.now(), data.diagram);
+            diagram.innerHTML = svg;
+            diagram.hidden = false;
+          } catch (err) {
+            diagram.textContent = data.diagram;
+            diagram.hidden = false;
+          }
+        }
+        raw.hidden = false;
+        raw.textContent = JSON.stringify(data.result, null, 2);
+      } finally {
+        setCodeButtons(false);
       }
-      raw.hidden = false;
-      raw.textContent = JSON.stringify(data.result, null, 2);
-      setCodeButtons(false);
     }
 
     async function tryBob() {
